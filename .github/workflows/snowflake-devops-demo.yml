@@ -32,7 +32,7 @@ jobs:
       - name: Deploy
         env:
           SNOWFLAKE_ACCOUNT:          ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER:             ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_USER:             ${{ vars.SNOWFLAKE_USER }}
           SNOWFLAKE_ROLE:             ${{ vars.SNOWFLAKE_ROLE }}
           SNOWFLAKE_WAREHOUSE:        ${{ vars.SNOWFLAKE_WAREHOUSE }}
           SNOWFLAKE_DATABASE:         ${{ vars.SNOWFLAKE_DATABASE }}
