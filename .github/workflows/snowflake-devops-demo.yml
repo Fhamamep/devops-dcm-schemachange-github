@@ -2,22 +2,25 @@ name: schemachange deploy
 
 on:
   push:
-    branches: [main]
-    paths: ['migrations/**']     # only run when a migration changes
-  workflow_dispatch:             # adds a "Run workflow" button
+    branches: [dev, main]                 # dev → DEV, main → PROD
+    paths:
+      - 'migrations/**'
+      - '.github/workflows/**'            # also deploy when the pipeline itself changes
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     steps:
-      - uses: actions/checkout@v4            # get the repo files onto the runner
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install schemachange
-        run: pip install schemachange
+        run: pip install schemachange==4.4.0
 
       - name: Write private key to a temp file
         env:
@@ -29,14 +32,14 @@ jobs:
       - name: Deploy
         env:
           SNOWFLAKE_ACCOUNT:          ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER:             ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_ROLE:             ${{ secrets.SNOWFLAKE_ROLE }}
-          SNOWFLAKE_WAREHOUSE:        ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_DATABASE:         ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_USER:             ${{ vars.SNOWFLAKE_USER }}
+          SNOWFLAKE_ROLE:             ${{ vars.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE:        ${{ vars.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE:         ${{ vars.SNOWFLAKE_DATABASE }}
           SNOWFLAKE_AUTHENTICATOR:    snowflake_jwt
           SNOWFLAKE_PRIVATE_KEY_PATH: ${{ runner.temp }}/rsa_key.p8
         run: |
           schemachange deploy \
             --root-folder migrations \
-            --change-history-table DEMO_DB.SCHEMACHANGE.CHANGE_HISTORY \
+            --change-history-table ${{ vars.SNOWFLAKE_DATABASE }}.SCHEMACHANGE.CHANGE_HISTORY \
             --create-change-history-table
